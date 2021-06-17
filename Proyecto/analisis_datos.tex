@@ -1,0 +1,151 @@
+\documentclass[11pt]{article}
+\usepackage{multicol}
+\usepackage[a4paper]{geometry}
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage[backend=biber]{biblatex}
+\bibliography{ref}
+
+%opening
+\title{\centering\fontsize{18}{16}\selectfont\textbf{Proyecto final: Análisis de datos en Pyhton}}
+\author{Karina Midory Muñoz Camacho\\Herramientas Informáticas y Gestión de la Información}
+
+\renewcommand{\thesection}{\Roman{section}.}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+	En el presente se analizarán dos bases de datos distintas. La primer base de datos es sobre la lista nominal de Guanajuato, de la cual nos interesa realizar una predicción para prever el número de casillas necesarias.\par La segunda base de datos es acerca de la natalidad en México; el propósito de esta segunda parte será analizar el comportamiento de los nacimientos en este país y realizar 	una predicción sobre cuántos se esperan para 2030.
+\end{abstract}
+
+\begin{multicols}{2}
+
+	\section{Análisis de lista nominal y predicción}
+	En este apartado se expondrán los datos de la lista nominal nacional (enfocándonos en Guanajuato) desde septiembre de 2019 hasta diciembre de 2020, para posteriormente realizar una predicción de dicha lista, y así poder determinar cuántas casillas se necesitarán por  sección.\par
+	El procedimiento que se siguió para la elaboración del análisis fue el siguiente: primero se recopilaron los datos abiertos de "Estadística de Padrón Electoral y Lista Nominal de Electores" de la página oficial del Instituto Electoral Nacional (INE), y una vez obtenidos todos estos datos (de septiembre de 2019 hasta diciembre de 2020), los archivos se exportaron a Python, en donde el siguiente paso fue acomodar dichos archivos respecto a su fecha. \par 
+	Después, se filtró la información que contenían, con el objetivo de obtener únicamente la lista nominal para el estado de Guanajuato (entidad número 11), se agruparon los datos de los documentos de texto, acomodándolos por municipio. Esto se logró con el código que aparece a continuación:
+	\begin{verbatim}	
+		for i,file in enumerate(files_):
+		data=pd.read_csv(file)
+		data=data[1:]
+		data=data[data['ENTIDAD']==11][1:]
+		mpo=data.groupby(['MUNICIPIO']).sum()
+		if i==0 :
+		if 'LISTA_NAL' in mpo.columns:
+		df_mpo = pd.DataFrame(mpo['LISTA_NAL'])
+		if 'LISTA_NACIONAL' in mpo.columns:
+		df_mpo = pd.DataFrame(mpo['LISTA_NACIO
+		NAL'])
+		if 'LISTA' in mpo.columns:
+		df_mpo = pd.DataFrame(mpo['LISTA'])
+		else:
+		if 'LISTA_NAL' in mpo.columns:
+		df_mpo[date_[i]]=mpo['LISTA_NAL']
+		if 'LISTA_NACIONAL' in mpo.columns:
+		df_mpo[date_[i]]=mpo['LISTA_NACIONAL']
+		if 'LISTA' in mpo.columns:
+		df_mpo[date_[i]]=mpo['LISTA']	
+	\end{verbatim}
+	Cabe resalatar que se utilizó la función "groupby" para que así los datos de cada municipio quedaran en un sólo lugar. 
+	Además, dichos datos se unieron en una tabla de pandas, para una fácil comprensión de los mismos, pero después se conviertieron en un arreglo, con el objetivo de poder manipularlos.\par 
+
+	En Fig. \ref{fig:1} se puede observar el comportamiento de la lista nominal.
+\end{multicols}
+
+		\begin{center}
+			\includegraphics[width=10cm]{grafica1}\label{fig:1}
+		\end{center}
+		
+\begin{multicols}{2}
+	Posteriormente, se realizó una regresión lineal y, con ésta, fuimos capaces de hacer una predicción sobre el número total de casillas a instalar; el siguiente código ilustra lo que se realizó.
+	\begin{verbatim}
+		fits=[]
+		prediction_lnal=[]
+		
+		for i in range(len(municipios)):
+		x=np.arange(len(municipios[i]))
+		m, b = np. polyfit(x, municipios[i],
+		1, w=municipios[i])
+		fits.append([m,b])
+		pred=m*(x[-12]+12)+b
+		
+		prediction_lnal.append(pred)
+	\end{verbatim}
+	Se agregó el resultado a una nueva columna llamada "Predicción lineal", en nuestra tabla de Pandas anterior; después se convirtió en arreglo, luego se dividió entre 750, ya que que debe haber una casilla por cada 750 actas, y finalmente se redondeó hacia arriba, porque no deben faltar casillas.
+	El resultado fue de 6038 casillas.\par
+	Una vez hecho esto, se realizó un análisis para las secciones. De igual manera, primeramente se filtró para el estado de Guanajuato y de nuevo se utilizó la función de "groupby" para que los datos de cada sección quedaran juntos. El código para logar esto, es muy similar al anterior, la única diferencia es que ahora utilizamos la secciones en lugar de los municipios.\par
+	Estos datos se colocaron en una tabla de Pandas, que más adelante se convirtió en un arreglo, en el que se llenaron con ceros los espacios vacíos para que no llegara a ocasionar ningún inconveniente.\par
+	Después se realizó la regresión lineal, que nos sirvió para hacer la predición de cuántas casillas se necesitarán por sección. El procedimiento que se hizo en esta parte es totalmente análogo al realizado anteriormente para los municipios, sólo que ahora se aplicó para cada sección.\par 
+	El resultado final de la predicción de casillas (tomando en cuenta cada una las secciones) fue de 6039; como podremos percatarnos, esta predicción difiere con una casilla de más, esto puede deberse a que, como se realizaron las operaciones directamente sobre cada sección, puede que haya una diferencia en los decimales, y al ser redondeado, da como resultado un valor más arriba.
+	\section{Análisis de natalidad en México}
+	Para esta sección se utilizaron los datos de "Estadísticas de natalidad" del Instituto Nacional de Estadística y Geografía (INEGI).\par 
+	Este estudio se divide en tres partes: el análisis de natalidad en México, en general, y particularmente por cada estado. En la tercer parte se intentarán analizar las causas de los resultados.\par 
+	Para el primer caso, lo primero fue exportar los datos a Python. Dichos datos se encontraban en un solo archivo con dos columnas. Cada columna se convirtió en un arreglo, para poder manipular los datos que contenían.\par 
+	Lo siguiente fue realizar una regresión lineal, como se muestra a continuación:
+	\begin{verbatim}
+		x = year0.reshape(-1,1)
+		y = mp
+		
+		model = LinearRegression().fit(x, y)
+		y_pred=model.intercept_+model.coef_* x
+		m = model.coef_
+		b = model.intercept_
+	\end{verbatim}
+	Donde $year0$ es el arreglo correspondiente a los años y $mp$ contiene el número de nacimientos (por año).\\
+	La ecuación que descibre el comportamiento de los datos es:
+	\begin{equation}\label{eq:1}
+		y = -23758.5477x + 50240533.7908
+	\end{equation}
+	La cual tiene un coeficiente de determinación de 0.8062.\par 
+	Esto, gráficamente, se puede observar en la Fig.
+	
+	\includegraphics[width=7cm]{grafica2}\label{fig:2}
+	
+	Una vez que se ha obtenido la ecuación \ref{eq:1}, podremos obtener nuestra predicción para el año 2030, lo único que se debe hacer es sustituir el valor de $x$ como $x=2030$.
+	\begin{equation}
+		y = -23758.5477 (2030) + 50240533.7908
+	\end{equation}
+	\hspace{0.5cm} = 2,010,681\\
+	Así que la cantidad de nacimientos esperados para 2030 es de 2,010,681.\par 
+	Como podemos ver en la Fig. \ref{fig:2} la función es linealmente decreciente, y el último valor que se registró fue el de 2019, con un 2,092,214 de nacimientos, nuestro resultado es menor así que tiene sentido.\par 
+	Para la segunda parte del análisis lo que se pretende es ver el comportamiento de los estados individualmente.\par 
+	Se exportó el archivo que contenía los datos necesarios a Python, después se agruparon los años en un arreglo:
+	\begin{verbatim}
+		year1 = np.unique(data1['Año'])
+		year1
+	\end{verbatim}
+	También se agruparon los datos de cada municipio en su arreglo correspondiente (de una manera similar a la que se muestra arriba). Aquí cabe destacar que hubo ciertos inconvenientes: el arreglo que contenía los datos de Baja California quedaba con una dimensión más pequeña que los demás, pese a que en la tabla original los datos estaban completos. Así que, el código se realizó manualmente y al momento de graficar se ignoró este estado.\par 
+	
+	\includegraphics[width=7cm]{grafica3}\label{fig:3}
+	
+	En Fig. \ref{fig:3} encontramos el número de nacimientos registrados a lo largo del tiempo, donde los números de las etiquetas en la parte derecha corresponden al número de la entidad.\par 
+	Observando dicha figura, podemos percatarnos que la mayoría de los estados tienen un comportamiento similar, pero hay uno que particularmente destaca, la línea roja que se encuentra muy por encima de las demás, ésta pertenece a la entidad número 15, el Estado de México.\par 
+	Finalmente, se realizó un análisis sobre el uso de métodos anticonceptivos, con el fin de determinar si esto tiene alguna relación con el comportamiento de la natalidad.\par 
+	Los datos a  analizar se recopilaron de "Encuesta Nacional de la Dinámica Demográfica" del INEGI.\par 
+	Para este otro análisis se usó un método muy parecido al anterior, ya que también se tuvieron los mismos problemas pero esta vez con el estado de Baja California Sur, cabe destacar que los datos en la tabla original estaban completos, pero al momento de leerlos en Python faltaba un elemento.\par 
+	
+	\includegraphics[width=7cm]{grafica4}\label{fig:4}
+	
+	En la  Fig. \ref{fig:4} se muestra el comportamiento de la prevalencia de uso de métodos anticonceptivos modernos en mujeres en edad fértil, y como podemos observar todas las entidades tienen forma similar (a excepción de una); podemos observar una tendencia creciente, con un pico en 2014 y para 2018 una significante caída. \par 
+	Para dar resultados más concluyentes sería necesaria más información, pero los únicos datos disponibles eran de los años 1992, 1997, 2009, 2014 y 2018. Aunque con todo esto podemos deducir que sí existe cierto crecimiento en el uso de anticonceptivos.\par 
+	En conclusión, la natalidad en México va en descenso, es decir, que el número de nacimientos cada vez es más bajo con el paso del tiempo, y esto puede estar relacionado con el uso de métodos anticonceptivos, que va en aumento. Además, también podemos resaltar que el estado que más destaca en esta cuestión es el Estado de México, que si bien el número de nacimientos va en descenso, aun así es un número muy elevado, tanto así que sobresale por mucho entre todos los demás.
+	
+	\begin{thebibliography}{9}
+		\bibitem{INE}
+		\textit{Estadística de Padrón Electoral y Lista Nominal de Electores}
+		31/12/2020. Disponible en:
+		\url{https://www.ine.mx/transparencia/datos-abiertos/#/archivo/estadistica-padron-electoral-lista-nominal-electores}
+		
+		\bibitem{INEGI}
+		\textit{Natalidad y fecundidad}
+		2020. Disponible en:
+		\url{https://www.inegi.org.mx/temas/natalidad/#Tabulados}
+	\end{thebibliography}
+	
+\end{multicols}
+
+	
+\end{document}
